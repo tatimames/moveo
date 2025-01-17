@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]
+ 
+  db:
+    image: postgres
+    container_name: postgres_db_container
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: inventory_db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user", "-d", "inventory_db"]
+      interval: 1s
+      timeout: 10s
+      retries: 15
+    ports:
+      - "5432:5432"
+networks:
+  app_network:
+    driver: bridge
+
+
+    
