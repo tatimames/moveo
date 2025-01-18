@@ -3,8 +3,10 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from sqlalchemy.exc import OperationalError
 from pydantic import BaseModel
+from confluent_kafka import Producer
 import uvicorn
 import os
+import json
 
 DATABASE_URL = 'postgresql+psycopg2://user:password@postgres_db_container/inventory_db'
 
@@ -42,6 +44,20 @@ class ItemResponse(ItemBase):
     class Config:
         from_attributes = True
 
+# Kafka producer setup
+kafka_config = {
+    'bootstrap.servers': 'kafka:9092'
+}
+producer = Producer(kafka_config)
+
+def send_kafka_message(topic: str, message: dict):
+    try:
+        producer.produce(topic, value=json.dumps(message))
+        producer.flush()
+        print(f"Message sent to Kafka topic {topic}: {message}")
+    except Exception as e:
+        print(f"Failed to send Kafka message: {e}")
+
 # FastAPI app
 app = FastAPI()
 
@@ -65,6 +81,8 @@ def create_item(item: ItemCreate, db: Session = Depends(get_db)):
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
+
+    send_kafka_message("item_created", {"id": db_item.id, "name": db_item.name, "description": db_item.description})
     return db_item
 
 @app.get("/items/{id}", response_model=ItemResponse)
@@ -92,6 +110,8 @@ def update_item(id: int, item: ItemCreate, db: Session = Depends(get_db)):
     db_item.description = item.description
     db.commit()
     db.refresh(db_item)
+
+    send_kafka_message("item_updated", {"id": db_item.id, "name": db_item.name, "description": db_item.description})
     return db_item
 
 
@@ -123,5 +143,4 @@ def startup_event():
 
 
 if __name__ == "__main__":
-    # init_db()
     uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)

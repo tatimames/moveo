@@ -1,13 +1,25 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: app
     ports:
       - "5000:5000"
     depends_on:
+      kafka:
+        condition: service_healthy
+      zookeeper:
+        condition: service_healthy
       db:
         condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://user:password@db/inventory_db
+      KAFKA_BROKER: kafka:9092
+    networks:
+      - app_network
     command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000"]
- 
+
   db:
     image: postgres
     container_name: postgres_db_container
@@ -22,9 +34,64 @@ services:
       retries: 15
     ports:
       - "5432:5432"
+    networks:
+      - app_network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true" 
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server=kafka:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - app_network
+      
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    container_name: consumer
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER: kafka:9092
+      TOPICS: "item_created,item_updated"
+      GROUP_ID: "inventory_group"
+    networks:
+      - app_network
+    command: ["python", "consumer.py"]
+
+
 networks:
   app_network:
     driver: bridge
-
-
-    
