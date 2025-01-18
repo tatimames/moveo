@@ -4,7 +4,6 @@ from confluent_kafka import Consumer, KafkaException, KafkaError
 from confluent_kafka.admin import AdminClient, NewTopic
 import logging
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class KafkaConsumerService:

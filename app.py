@@ -10,7 +10,6 @@ import json
 
 DATABASE_URL = 'postgresql+psycopg2://user:password@postgres_db_container/inventory_db'
 
-# Database setup
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -58,10 +57,8 @@ def send_kafka_message(topic: str, message: dict):
     except Exception as e:
         print(f"Failed to send Kafka message: {e}")
 
-# FastAPI app
 app = FastAPI()
 
-# Dependency
 def get_db():
     db = SessionLocal()
     try:
