@@ -1,4 +1,4 @@
-# Kafka Application - README
+# Inventory managment Application
 
 ## Overview
 This project is a Kafka-powered microservice architecture designed as a inventory management service that allows creating, updating, retrieving, and deleting items from the inventory.

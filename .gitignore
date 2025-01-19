@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+*.egg-info/
+
+# Environment variables
+.env
+*.env
+
+# Logs and database
+*.log
+*.sqlite3
+
+# Ignore IDE/editor files
+.idea/
+.vscode/
+*.swp
+
+# Ignore Docker files
+.dockerignore
+
+# Ignore node_modules if using JS
+node_modules/
+
+# Ignore build artifacts
+*.tar
+*.gz
+*.zip
+*.whl
+
+# System files
+.DS_Store
+Thumbs.db
