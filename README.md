@@ -140,8 +140,3 @@ You can test them using tools like [Postman] or `curl`.
   }
   ```
 
-
-## Notes
-- Use the FastAPI Swagger UI ([http://localhost:5000/docs](http://localhost:5000/docs)) for interactive testing of endpoints.
-- The app auto-creates kafka topics (`item_created`, `item_updated`) if they don’t exist.
-

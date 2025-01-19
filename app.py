@@ -5,7 +5,6 @@ from sqlalchemy.exc import OperationalError
 from pydantic import BaseModel
 from confluent_kafka import Producer
 import uvicorn
-import os
 import json
 
 DATABASE_URL = 'postgresql+psycopg2://user:password@postgres_db_container/inventory_db'
@@ -89,7 +88,7 @@ def get_item(id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Item not found")
     return db_item
 
-@app.delete("/items/{id}", status_code=204)
+@app.delete("/items/{id}", status_code=200)
 def delete_item(id: int, db: Session = Depends(get_db)):
     db_item = db.query(Item).filter(Item.id == id).first()
     if not db_item:
@@ -97,6 +96,7 @@ def delete_item(id: int, db: Session = Depends(get_db)):
     db.delete(db_item)
     db.commit()
     return {"message": "Item deleted"}
+
 
 @app.put("/items/{id}", response_model=ItemResponse)
 def update_item(id: int, item: ItemCreate, db: Session = Depends(get_db)):

@@ -1,5 +1,6 @@
 import json
 import signal
+import os
 from confluent_kafka import Consumer, KafkaException, KafkaError
 from confluent_kafka.admin import AdminClient, NewTopic
 import logging
@@ -17,8 +18,8 @@ class KafkaConsumerService:
         self.consumer = Consumer(self.consumer_config)
         self.running = False
 
+    # """Create Kafka topics if they don't already exist."""
     def create_topics(self, num_partitions=1, replication_factor=1):
-        """Create Kafka topics if they don't already exist."""
         admin_client = AdminClient({'bootstrap.servers': self.consumer_config['bootstrap.servers']})
 
         existing_topics = admin_client.list_topics(timeout=10).topics
@@ -82,23 +83,13 @@ class KafkaConsumerService:
         logging.info("Kafka consumer service stopped.")
 
 
-def signal_handler(sig, frame, consumer_service):
-    """Handle termination signals."""
-    logging.info(f"Signal {sig} received, shutting down...")
-    consumer_service.stop()
-
 if __name__ == "__main__":
-    BOOTSTRAP_SERVERS = "kafka:9092"
-    GROUP_ID = "inventory_group"
-    TOPICS = ["item_created", "item_updated"]
+    BOOTSTRAP_SERVERS = os.getenv("KAFKA_BROKER", "kafka:9092")  
+    GROUP_ID = os.getenv("GROUP_ID", "inventory_group")
+    TOPICS = os.getenv("TOPICS", "item_created,item_updated").split(",")
 
     consumer_service = KafkaConsumerService(BOOTSTRAP_SERVERS, GROUP_ID, TOPICS)
     consumer_service.create_topics()
-
-    # Register signal handlers for clean shutdown
-    signal.signal(signal.SIGINT, lambda s, f: signal_handler(s, f, consumer_service))
-    signal.signal(signal.SIGTERM, lambda s, f: signal_handler(s, f, consumer_service))
-
     consumer_service.start()
 
     try:
